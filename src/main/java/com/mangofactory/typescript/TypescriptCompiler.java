@@ -65,9 +65,13 @@ public class TypescriptCompiler {
 		String source = FileUtils.readFileToString(input);
 		return compile(source);
 	}
-	public void compile(File input, File output) throws TypescriptException, IOException {
+	public void compile(File input, File targetFile) throws TypescriptException, IOException {
 		String result = compile(input);
-		FileUtils.writeStringToFile(output, result);
+		FileUtils.writeStringToFile(targetFile, result);
+	}
+	public void compile(String input, File targetFile) throws IOException, TypescriptException {
+		String result = compile(input);
+		FileUtils.writeStringToFile(targetFile, result);
 	}
 
 	private void init()
