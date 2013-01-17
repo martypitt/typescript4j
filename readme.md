@@ -20,7 +20,7 @@ The below gives a simple example that compiles a very simple snippet:
 	
 To learn more about Typescript, please visit http://www.typescriptlang.org
 
-## I'm not that smart
+## Credit
 This project is **HEAVILY** borrowed from other really really smart people and projects.
 
 Specifically, thanks to:
