@@ -12,14 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.tools.shell.Global;
 
 @Slf4j
 public class TypescriptCompiler {
-
-    private static final String COMPILE_STRING = "var result; result = compilerWrapper.compile(input)";
 
 	@Getter @Setter
 	private URL envJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/env.rhino.js");
@@ -31,7 +31,16 @@ public class TypescriptCompiler {
 	private Context cx;
 	private Scriptable scope;
 
-
+	@Getter @Setter
+	private EcmaScriptVersion ecmaScriptVersion = EcmaScriptVersion.ES3;
+	
+	@Getter @Setter
+	private ModuleKind moduleKind = ModuleKind.CommonJS;
+	
+	String getCompilationCommand()
+	{
+		return String.format("var compilationResult; compilationResult = compilerWrapper.compile(input, %s)",ecmaScriptVersion.getJs());
+	}
 	public String compile(String input) throws TypescriptException {
 		if (cx == null) {
 			init();
@@ -40,15 +49,23 @@ public class TypescriptCompiler {
 		long start = System.currentTimeMillis();
 
 		try {
+			NativeObject compilationResult = new NativeObject();
 			scope.put("input", scope, input);
-			scope.put("result", scope, "");
-
-			cx.evaluateString(scope, COMPILE_STRING, "compile.js", 1, null);
-			Object result = scope.get("result", scope);
+			scope.put("compilationResult", scope, compilationResult);
+			
+			cx.evaluateString(scope, getCompilationCommand(), "compile.js", 1, null);
+			compilationResult = (NativeObject) scope.get("compilationResult", scope);
+			
+			String compiledSource = compilationResult.get("source").toString();
+			NativeArray errors = (NativeArray) compilationResult.get("errors");
 
 			log.debug("Finished compilation of Typescript source in " + (System.currentTimeMillis() - start) + " ms.");
 
-			return result.toString();
+			if (errors.size() > 0)
+			{
+				throwCompilationError(errors);
+			}
+			return compiledSource;
 		}
 		catch (Exception e) {
 			if (e instanceof JavaScriptException) {
@@ -60,6 +77,17 @@ public class TypescriptCompiler {
 			}
 			throw new TypescriptException(e);
 		}
+	}
+	private void throwCompilationError(NativeArray errors) throws TypescriptException {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < errors.size(); i++)
+		{
+			if (sb.length() > 0)
+				sb.append("\n");
+			sb.append(errors.get(0).toString());
+		}
+		throw new TypescriptException(sb.toString());
+		
 	}
 	public String compile(File input) throws TypescriptException, IOException {
 		String source = FileUtils.readFileToString(input);
