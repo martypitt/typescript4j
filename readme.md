@@ -12,6 +12,12 @@ The below gives a simple example that compiles a very simple snippet:
 	// Or, compile and output to a file:
 	compiler.compile(new File("example.ts"), new File('output.js'));
 	
+	
+	// Compile using ES5 features:
+	TypescriptCompiler compiler = new TypescriptCompiler();
+	compiler.setEcmaScriptVersion(EcmaScriptVersion.ES5);
+	... etc ...
+	
 To learn more about Typescript, please visit http://www.typescriptlang.org
 
 ## I'm not that smart
