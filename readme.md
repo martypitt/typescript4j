@@ -22,3 +22,13 @@ Specifically, thanks to:
  * [Typescript Compile](https://github.com/niutech/typescript-compile)
  
 These projects made implementing this compiler very simple.
+
+## Intent
+The goal of this project is to make Typescript compilation possible from Java,
+without a dependency on `npm` or `node`.
+
+It's used in [Bakehouse](https://github.com/martypitt/bakehouse) to facilitate server-side on-demand compilation of Typescript.
+
+This project doesn't intend to be a replacement for the typescript compiler.
+Also, the primary focus of this project is *not* performance.
+
