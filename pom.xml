@@ -19,7 +19,7 @@
 		<url>https://github.com/martypitt/typescript4j/issues</url>
 	</issueManagement>
 	<properties>
-		<skipGpgSigning>true</skipGpgSigning>
+		<skipGpgSigning>false</skipGpgSigning>
 	</properties>
 	<repositories>
 		<repository>
