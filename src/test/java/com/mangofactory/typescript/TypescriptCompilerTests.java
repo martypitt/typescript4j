@@ -14,11 +14,12 @@ import org.junit.rules.ExpectedException;
 public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 
 	@Rule public ExpectedException exception = ExpectedException.none();
-	private TypescriptCompiler compiler;
+	private TypescriptCompiler compiler = new TypescriptCompiler();
+	
 	@Before
 	public void setup()
 	{
-		this.compiler = new TypescriptCompiler();
+//		this.compiler = new TypescriptCompiler();
 	}
 	@Test @SneakyThrows
 	public void compileTypescript()
@@ -57,6 +58,16 @@ public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 
 		assertThat(output,equalTo(expected));
 	}
+	
+	@Test @SneakyThrows
+	public void givenReportedError_that_itIsStoredInTheCompilationContext()
+	{
+		CompilationContext context = CompilationContextRegistry.getNew();
+		context.setThrowExceptionOnCompilationFailure(false);
+		compiler.compile("asdfasfd", context);
+		assertThat(context.getErrorCount(), equalTo(1));
+	}
+	
 
 	@Test
 	public void generatesCorrectEcmaScriptCommand()

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+import javax.sql.rowset.spi.SyncResolver;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,6 @@ public class TypescriptCompiler {
 	@Getter @Setter
 	private URL typescriptCompilerJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/typescript.compile-0.3.js");
 
-	private Context cx;
 	private Scriptable scope;
 
 	@Getter @Setter
@@ -39,20 +40,26 @@ public class TypescriptCompiler {
 	
 	String getCompilationCommand()
 	{
-		return String.format("var compilationResult; compilationResult = compilerWrapper.compile(input, %s)",ecmaScriptVersion.getJs());
+		return String.format("var compilationResult; compilationResult = compilerWrapper.compile(input, %s, contextName)",ecmaScriptVersion.getJs());
 	}
-	public String compile(String input) throws TypescriptException {
-		if (cx == null) {
-			init();
+	
+	public String compile(String input, CompilationContext compilationContext)  throws TypescriptException
+	{
+		synchronized (this) {
+			if (scope == null) {
+				init();
+			}
 		}
 
 		long start = System.currentTimeMillis();
 
 		try {
+			Context cx = Context.enter();
+			
 			NativeObject compilationResult = new NativeObject();
 			scope.put("input", scope, input);
+			scope.put("contextName", scope, compilationContext.getName());
 			scope.put("compilationResult", scope, compilationResult);
-			
 			cx.evaluateString(scope, getCompilationCommand(), "compile.js", 1, null);
 			compilationResult = (NativeObject) scope.get("compilationResult", scope);
 			
@@ -61,7 +68,7 @@ public class TypescriptCompiler {
 
 			log.debug("Finished compilation of Typescript source in " + (System.currentTimeMillis() - start) + " ms.");
 
-			if (errors.size() > 0)
+			if (errors.size() > 0 && compilationContext.getThrowExceptionOnCompilationFailure())
 			{
 				throwCompilationError(errors);
 			}
@@ -76,8 +83,17 @@ public class TypescriptCompiler {
 				}
 			}
 			throw new TypescriptException(e);
+		} finally {
+			Context.exit();
 		}
 	}
+	public String compile(String input) throws TypescriptException {
+		CompilationContext compilationContext = CompilationContextRegistry.getNew();
+		String result = compile(input,compilationContext);
+		CompilationContextRegistry.destroy(compilationContext);
+		return result;
+	}
+	
 	private void throwCompilationError(NativeArray errors) throws TypescriptException {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < errors.size(); i++)
@@ -102,20 +118,21 @@ public class TypescriptCompiler {
 		FileUtils.writeStringToFile(targetFile, result);
 	}
 
-	private void init()
+	public synchronized void init()
 	{
 		long start = System.currentTimeMillis();
 
-		cx = Context.enter();
-		cx.setOptimizationLevel(-1); 
-		cx.setLanguageVersion(Context.VERSION_1_7);
-
-		Global global = new Global(); 
-		global.init(cx); 
-
-		scope = cx.initStandardObjects(global);
-
 		try {
+			
+			Context cx = Context.enter();
+			cx.setOptimizationLevel(-1); 
+			cx.setLanguageVersion(Context.VERSION_1_7);
+	
+			Global global = new Global(); 
+			global.init(cx); 
+	
+			scope = cx.initStandardObjects(global);
+
 			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), "env.rhino.js", 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(typescriptJs.openConnection().getInputStream()), "typescript-0.8.js", 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(typescriptCompilerJs.openConnection().getInputStream()), "typescript.compile-0.3.js", 1, null);
@@ -124,6 +141,8 @@ public class TypescriptCompiler {
 			String message = "Failed to initialize Typescript compiler.";
 			log.error(message, e);
 			throw new IllegalStateException(message, e);
+		} finally {
+			Context.exit();
 		}
 
 		log.debug("Finished initialization of typescript compiler in " + (System.currentTimeMillis() - start) + " ms.");
