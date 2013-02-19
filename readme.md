@@ -1,6 +1,16 @@
 # Typescript 4J
 This project Java library to compile Typescript files to Javascript files
 
+## Dependency
+Grab it from maven:
+
+     <dependency>
+          <groupId>com.mangofactory</groupId>
+          <artifactId>typescript4j</artifactId>
+          <version>0.1.0</version>
+     </dependency>
+     
+     
 The below gives a simple example that compiles a very simple snippet:
 
 	// Instantiate the compiler:
