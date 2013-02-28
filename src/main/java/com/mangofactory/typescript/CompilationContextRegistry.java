@@ -15,6 +15,11 @@ public class CompilationContextRegistry {
 		contexts.put(name,compilationContext);
 		return compilationContext;
 	}
+	
+	public static int getCount()
+	{
+		return contexts.size();
+	}
 	public static CompilationContext get(String name)
 	{
 		return contexts.get(name);
@@ -25,5 +30,9 @@ public class CompilationContextRegistry {
 	public static void destroy(String name)
 	{
 		contexts.remove(name);
+	}
+	public static boolean contains(String name)
+	{
+		return contexts.containsKey(name);
 	}
 }

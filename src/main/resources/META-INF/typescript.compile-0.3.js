@@ -16,7 +16,6 @@ var compilerWrapper = {
 	compile : function(src,codeGenTarget,contextName) {
 		//Packed declaration file lib.d.ts
 		var compilationResult = {};
-		compilationResult.errors = [];
 		var compilationContext = Packages.com.mangofactory.typescript.CompilationContextRegistry.get(contextName);
 		
 		var libfile = '/// <reference no-default-lib="true"/>\n' +
@@ -38,11 +37,18 @@ var compilerWrapper = {
 			return '';
 		}
 		compiler.parser.errorRecovery = true;
-		compiler.setErrorCallback(function(start, len, message, block) {
-			var error = 'Compilation error: ' + message + '\n Code block: ' + block + ' Start position: ' + start + ' Length: '+ len;
-			console.log(error);
-			compilationResult.errors.push(message);
-			compilationContext.addError(start,len,message,block);
+		compiler.setErrorCallback(function(minChar, charLen, message, compilationUnitIndex) {
+			console.log(message);
+			var lineCol = { line : -1, col: -1 };
+			compiler.parser.getSourceLineCol(lineCol, minChar)
+			//line is 1-base, col, however, is 0-base. add 1 to the col before printing the message
+			var problem = {
+				line: lineCol.line,
+				col: lineCol.col + 1,
+				message: message,
+				compilationUnitIndex: compilationUnitIndex
+			}
+			compilationContext.addError(problem);
 		});
 		compiler.addUnit(libfile, 'lib.d.ts');
 		compiler.addUnit(src,'');

@@ -1,15 +1,21 @@
 package com.mangofactory.typescript;
 
-public class TypescriptException extends Exception {
+import java.util.List;
 
-	public TypescriptException(String message)
+import lombok.Getter;
+
+/**
+ * Compilation exception thrown by the typescript compiler
+ * @author martypitt
+ *
+ */
+public class TypescriptException extends RuntimeException {
+
+	@Getter
+	private final List<CompilationProblem> compilationProblems;
+	public TypescriptException(List<CompilationProblem> compilationProblems)
 	{
-		super(message);
-	}
-	public TypescriptException(Throwable cause) {
-		super(cause);
-	}
-	public TypescriptException(String message, Throwable cause) {
-		super(message, cause);
+		super(CompilationProblem.getErrorMessage(compilationProblems));
+		this.compilationProblems = compilationProblems;
 	}
 }

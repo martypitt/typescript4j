@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import org.mozilla.javascript.NativeObject;
+
 import com.google.common.collect.Lists;
 
 @RequiredArgsConstructor(access=AccessLevel.PACKAGE)
@@ -18,19 +20,32 @@ public class CompilationContext {
 	private boolean throwExceptionOnCompilationFailure = true;
 	
 	@Getter
-	private final List<Problem> problems = Lists.newArrayList();
+	private final List<CompilationProblem> problems = Lists.newArrayList();
 	
-	public void addError(Double start, Double len, String message, Double block)
+	public void addError(NativeObject error)
 	{
-		problems.add(new Problem(start.intValue(),len.intValue(),message,block.intValue()));
+		problems.add(CompilationProblem.fromNativeObject(error));
 	}
 
 	public Integer getErrorCount() {
 		return problems.size();
 	}
 	
+	public void throwIfCompilationFailed()
+	{
+		if (!throwExceptionOnCompilationFailure)
+			return;
+		if (problems.isEmpty())
+			return;
+		throw new TypescriptException(problems);
+		
+	}
 	public boolean getThrowExceptionOnCompilationFailure()
 	{
 		return throwExceptionOnCompilationFailure;
+	}
+
+	public CompilationProblem getProblem(int i) {
+		return getProblems().get(i);
 	}
 }

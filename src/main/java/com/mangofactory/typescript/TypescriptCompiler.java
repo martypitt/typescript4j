@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.List;
 
 import javax.sql.rowset.spi.SyncResolver;
 
@@ -19,6 +20,7 @@ import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.tools.shell.Global;
+import org.testng.collections.Lists;
 
 @Slf4j
 public class TypescriptCompiler {
@@ -34,15 +36,15 @@ public class TypescriptCompiler {
 
 	@Getter @Setter
 	private EcmaScriptVersion ecmaScriptVersion = EcmaScriptVersion.ES3;
-	
+
 	@Getter @Setter
 	private ModuleKind moduleKind = ModuleKind.CommonJS;
-	
+
 	String getCompilationCommand()
 	{
 		return String.format("var compilationResult; compilationResult = compilerWrapper.compile(input, %s, contextName)",ecmaScriptVersion.getJs());
 	}
-	
+
 	public String compile(String input, CompilationContext compilationContext)  throws TypescriptException
 	{
 		synchronized (this) {
@@ -55,55 +57,50 @@ public class TypescriptCompiler {
 
 		try {
 			Context cx = Context.enter();
-			
+
 			NativeObject compilationResult = new NativeObject();
 			scope.put("input", scope, input);
 			scope.put("contextName", scope, compilationContext.getName());
 			scope.put("compilationResult", scope, compilationResult);
 			cx.evaluateString(scope, getCompilationCommand(), "compile.js", 1, null);
 			compilationResult = (NativeObject) scope.get("compilationResult", scope);
-			
+
 			String compiledSource = compilationResult.get("source").toString();
-			NativeArray errors = (NativeArray) compilationResult.get("errors");
+//			NativeArray problems = (NativeArray) compilationResult.get("problems");
 
 			log.debug("Finished compilation of Typescript source in " + (System.currentTimeMillis() - start) + " ms.");
 
-			if (errors.size() > 0 && compilationContext.getThrowExceptionOnCompilationFailure())
-			{
-				throwCompilationError(errors);
-			}
+			compilationContext.throwIfCompilationFailed();
+
 			return compiledSource;
 		}
-		catch (Exception e) {
-			if (e instanceof JavaScriptException) {
-				Scriptable value = (Scriptable)((JavaScriptException)e).getValue();
-				if (value != null && ScriptableObject.hasProperty(value, "message")) {
-					String message = (String)ScriptableObject.getProperty(value, "message");
-					throw new TypescriptException(message, e);
-				}
+		catch (JavaScriptException e) {
+			Scriptable value = (Scriptable)((JavaScriptException)e).getValue();
+			if (value != null && ScriptableObject.hasProperty(value, "message")) 
+			{
+				String message = (String)ScriptableObject.getProperty(value, "message");
+				throw new RuntimeException(message);
+			} else {
+				throw new RuntimeException(e);
 			}
-			throw new TypescriptException(e);
 		} finally {
 			Context.exit();
 		}
 	}
 	public String compile(String input) throws TypescriptException {
 		CompilationContext compilationContext = CompilationContextRegistry.getNew();
-		String result = compile(input,compilationContext);
-		CompilationContextRegistry.destroy(compilationContext);
-		return result;
-	}
-	
-	private void throwCompilationError(NativeArray errors) throws TypescriptException {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < errors.size(); i++)
-		{
-			if (sb.length() > 0)
-				sb.append("\n");
-			sb.append(errors.get(0).toString());
+		try {
+			String result = compile(input,compilationContext);
+			return result;
+		} finally {
+			CompilationContextRegistry.destroy(compilationContext);
 		}
-		throw new TypescriptException(sb.toString());
-		
+	}
+
+	
+	public String compile(File input, CompilationContext context) throws TypescriptException, IOException {
+		String source = FileUtils.readFileToString(input);
+		return compile(source, context);
 	}
 	public String compile(File input) throws TypescriptException, IOException {
 		String source = FileUtils.readFileToString(input);
@@ -123,14 +120,14 @@ public class TypescriptCompiler {
 		long start = System.currentTimeMillis();
 
 		try {
-			
+
 			Context cx = Context.enter();
 			cx.setOptimizationLevel(-1); 
 			cx.setLanguageVersion(Context.VERSION_1_7);
-	
+
 			Global global = new Global(); 
 			global.init(cx); 
-	
+
 			scope = cx.initStandardObjects(global);
 
 			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), "env.rhino.js", 1, null);

@@ -1,6 +1,7 @@
 package com.mangofactory.typescript;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.contains;
 import lombok.SneakyThrows;
@@ -59,22 +60,44 @@ public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 		assertThat(output,equalTo(expected));
 	}
 	
+	
+	@Test
+	public void afterFailedCompilation_that_compilationContextIsUnregistered()
+	{
+		int registryCount = CompilationContextRegistry.getCount();
+		try {
+			compiler.compile("asdfasfd");
+		} catch (Exception e) {}
+		assertThat(CompilationContextRegistry.getCount() , equalTo( registryCount ));
+	}
+	@SneakyThrows
+	@Test
+	public void afterSuccessfulCompilation_that_compilationContextIsUnregistered()
+	{
+		int registryCount = CompilationContextRegistry.getCount();
+		compiler.compile("class Greeter { greeting: string; }");
+		assertThat(CompilationContextRegistry.getCount() , equalTo( registryCount ));
+	}
+	
 	@Test @SneakyThrows
-	public void givenReportedError_that_itIsStoredInTheCompilationContext()
+	public void givenError_that_detailedErrorObjectIsAvailable()
 	{
 		CompilationContext context = CompilationContextRegistry.getNew();
 		context.setThrowExceptionOnCompilationFailure(false);
-		compiler.compile("asdfasfd", context);
+		compiler.compile(testResource("exampleWithError.ts"), context);
 		assertThat(context.getErrorCount(), equalTo(1));
+		CompilationProblem problem = context.getProblem(0);
+		assertThat(problem.getLine(),equalTo(6));
+		assertThat(problem.getColumn(),equalTo(2));
+		assertThat(problem.getMessage(),equalTo("Function declared a non-void return type, but has no return expression"));
 	}
-	
 
 	@Test
 	public void generatesCorrectEcmaScriptCommand()
 	{
 		compiler.setEcmaScriptVersion(EcmaScriptVersion.ES3);
-		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.CodeGenTarget.ES3)"));
+		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.CodeGenTarget.ES3, contextName)"));
 		compiler.setEcmaScriptVersion(EcmaScriptVersion.ES5);
-		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.CodeGenTarget.ES5)"));
+		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.CodeGenTarget.ES5, contextName)"));
 	}
 }
