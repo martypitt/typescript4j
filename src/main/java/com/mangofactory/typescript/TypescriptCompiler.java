@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.List;
-
-import javax.sql.rowset.spi.SyncResolver;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -15,12 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
-import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.tools.shell.Global;
-import org.testng.collections.Lists;
 
 @Slf4j
 public class TypescriptCompiler {
