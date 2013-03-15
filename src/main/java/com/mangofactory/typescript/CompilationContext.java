@@ -20,11 +20,11 @@ public class CompilationContext {
 	private boolean throwExceptionOnCompilationFailure = true;
 	
 	@Getter
-	private final List<CompilationProblem> problems = Lists.newArrayList();
+	private final List<TypescriptCompilationProblem> problems = Lists.newArrayList();
 	
 	public void addError(NativeObject error)
 	{
-		problems.add(CompilationProblem.fromNativeObject(error));
+		problems.add(TypescriptCompilationProblem.fromNativeObject(error));
 	}
 
 	public Integer getErrorCount() {
@@ -45,7 +45,11 @@ public class CompilationContext {
 		return throwExceptionOnCompilationFailure;
 	}
 
-	public CompilationProblem getProblem(int i) {
+	public TypescriptCompilationProblem getProblem(int i) {
 		return getProblems().get(i);
+	}
+
+	public boolean hasProblems() {
+		return !problems.isEmpty();
 	}
 }
