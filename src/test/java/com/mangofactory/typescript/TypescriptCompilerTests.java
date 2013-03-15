@@ -86,7 +86,7 @@ public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 		context.setThrowExceptionOnCompilationFailure(false);
 		compiler.compile(testResource("exampleWithError.ts"), context);
 		assertThat(context.getErrorCount(), equalTo(1));
-		CompilationProblem problem = context.getProblem(0);
+		TypescriptCompilationProblem problem = context.getProblem(0);
 		assertThat(problem.getLine(),equalTo(6));
 		assertThat(problem.getColumn(),equalTo(2));
 		assertThat(problem.getMessage(),equalTo("Function declared a non-void return type, but has no return expression"));

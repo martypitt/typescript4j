@@ -105,6 +105,10 @@ public class TypescriptCompiler {
 		String result = compile(input);
 		FileUtils.writeStringToFile(targetFile, result);
 	}
+	public void compile(String input, File targetFile, CompilationContext context) throws IOException, TypescriptException {
+		String result = compile(input,context);
+		FileUtils.writeStringToFile(targetFile, result);
+	}
 	public void compile(String input, File targetFile) throws IOException, TypescriptException {
 		String result = compile(input);
 		FileUtils.writeStringToFile(targetFile, result);

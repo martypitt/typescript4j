@@ -12,10 +12,10 @@ import lombok.Getter;
 public class TypescriptException extends RuntimeException {
 
 	@Getter
-	private final List<CompilationProblem> compilationProblems;
-	public TypescriptException(List<CompilationProblem> compilationProblems)
+	private final List<TypescriptCompilationProblem> compilationProblems;
+	public TypescriptException(List<TypescriptCompilationProblem> compilationProblems)
 	{
-		super(CompilationProblem.getErrorMessage(compilationProblems));
+		super(TypescriptCompilationProblem.getErrorMessage(compilationProblems));
 		this.compilationProblems = compilationProblems;
 	}
 }
