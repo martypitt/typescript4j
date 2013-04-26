@@ -1,12 +1,15 @@
 package com.mangofactory.typescript;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.contains;
+
+import java.io.File;
+
 import lombok.SneakyThrows;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -15,13 +18,13 @@ import org.junit.rules.ExpectedException;
 public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 
 	@Rule public ExpectedException exception = ExpectedException.none();
-	private TypescriptCompiler compiler = new TypescriptCompiler();
+	private static TypescriptCompiler compiler = new TypescriptCompiler();
 	
 	@Before
 	public void setup()
 	{
-//		this.compiler = new TypescriptCompiler();
 	}
+
 	@Test @SneakyThrows
 	public void compileTypescript()
 	{
@@ -40,6 +43,16 @@ public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 
 		assertThat(output,equalTo(expected));
 	}
+	
+	@SneakyThrows
+	@Test
+	public void compilesFollowingFileReferences()
+	{
+		String output = normalizeLineEndings(compiler.compile(testResource("human.ts")));
+		String expected = normalizeLineEndings(FileUtils.readFileToString(testResource("human.js")));
+
+		assertThat(output,equalTo(expected));
+	}
 
 	@Test
 	@SneakyThrows
@@ -54,8 +67,8 @@ public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 	public void es5InputShouldCompileWithParameter()
 	{
 		compiler.setEcmaScriptVersion(EcmaScriptVersion.ES5);
-		String output = compiler.compile(testResource("ES5-example.ts"));
-		String expected = FileUtils.readFileToString(testResource("ES5-expected.js"));
+		String output = normalizeLineEndings(compiler.compile(testResource("ES5-example.ts")));
+		String expected = normalizeLineEndings(FileUtils.readFileToString(testResource("ES5-expected.js")));
 
 		assertThat(output,equalTo(expected));
 	}
@@ -82,7 +95,7 @@ public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 	@Test @SneakyThrows
 	public void givenError_that_detailedErrorObjectIsAvailable()
 	{
-		CompilationContext context = CompilationContextRegistry.getNew();
+		CompilationContext context = CompilationContextRegistry.getNew(new File("."));
 		context.setThrowExceptionOnCompilationFailure(false);
 		compiler.compile(testResource("exampleWithError.ts"), context);
 		assertThat(context.getErrorCount(), equalTo(1));

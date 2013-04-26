@@ -1,5 +1,6 @@
 package com.mangofactory.typescript;
 
+import java.io.File;
 import java.util.Map;
 import java.util.UUID;
 
@@ -8,10 +9,10 @@ import com.google.common.collect.Maps;
 public class CompilationContextRegistry {
 
 	private static final Map<String, CompilationContext> contexts = Maps.newConcurrentMap();
-	public static CompilationContext getNew()
+	public static CompilationContext getNew(File basePath)
 	{
 		String name = UUID.randomUUID().toString();
-		CompilationContext compilationContext = new CompilationContext(name);
+		CompilationContext compilationContext = new CompilationContext(name,basePath);
 		contexts.put(name,compilationContext);
 		return compilationContext;
 	}

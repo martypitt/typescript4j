@@ -50,10 +50,40 @@ var compilerWrapper = {
 			}
 			compilationContext.addError(problem);
 		});
+
+		// first, add the lib file
 		compiler.addUnit(libfile, 'lib.d.ts');
-		compiler.addUnit(src,'');
+		
+		// These are source units which have not yet been parsed for ///<reference path="" /> elements
+		var sourceUnitsToParse = [ { content: src, path: '' } ];
+		var parsedUnits = {};
+		var resolvedFiles = [];
+		while (sourceUnitsToParse.length > 0) {
+			var sourceToParse = sourceUnitsToParse.shift();
+			parsedUnits[sourceToParse.path] = sourceToParse.content;
+			
+			// Get Typescript to parse for any reference links
+			var fileReferencesInSource = TypeScript.getReferencedFiles(new TypeScript.StringSourceText( sourceToParse.content ));
+			// Resolve the file references, and generat a sourceUnit
+			var referencedSourceUnits = compilationContext.resolveFiles(fileReferencesInSource);
+			// Add the source unit into the compiler.
+			compiler.addUnit(sourceToParse.content, sourceToParse.path, false, referencedSourceUnits);
+			
+			// Now, check to see if there are any new sources in the returned array that we haven't yet 
+			// parsed for ///<reference /> elements
+			
+			for( var i = 0; i < referencedSourceUnits.length; i++ )
+			{
+				var sourceUnit = referencedSourceUnits[i];
+				if (!parsedUnits[sourceUnit.path])
+				{
+					sourceUnitsToParse.push(sourceUnit);
+				}
+			}
+		}
+		
 		compiler.typeCheck();
-		compiler.emit(false, function createFile(fileName) {
+		compiler.emit(function createFile(fileName) {
 			return outfile;
 		});
 		compilationResult.source = outfile.source;

@@ -7,9 +7,11 @@ import java.net.URL;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.NativeObject;
@@ -82,8 +84,12 @@ public class TypescriptCompiler {
 			Context.exit();
 		}
 	}
+	@SneakyThrows
 	public String compile(String input) throws TypescriptException {
-		CompilationContext compilationContext = CompilationContextRegistry.getNew();
+		return compile(input, new File("."));
+	}
+	public String compile(String input, File basePath) throws TypescriptException {
+		CompilationContext compilationContext = CompilationContextRegistry.getNew(basePath);
 		try {
 			String result = compile(input,compilationContext);
 			return result;
@@ -99,7 +105,8 @@ public class TypescriptCompiler {
 	}
 	public String compile(File input) throws TypescriptException, IOException {
 		String source = FileUtils.readFileToString(input);
-		return compile(source);
+		File basePath = input.getParentFile();
+		return compile(source,basePath);
 	}
 	public void compile(File input, File targetFile) throws TypescriptException, IOException {
 		String result = compile(input);
@@ -109,8 +116,8 @@ public class TypescriptCompiler {
 		String result = compile(input,context);
 		FileUtils.writeStringToFile(targetFile, result);
 	}
-	public void compile(String input, File targetFile) throws IOException, TypescriptException {
-		String result = compile(input);
+	public void compile(String input, File basePath, File targetFile) throws IOException, TypescriptException {
+		String result = compile(input,basePath);
 		FileUtils.writeStringToFile(targetFile, result);
 	}
 
