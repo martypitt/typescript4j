@@ -21,13 +21,16 @@ import org.mozilla.javascript.tools.shell.Global;
 
 @Slf4j
 public class TypescriptCompiler {
+	private static final String TYPESCRIPT_COMPILER = "typescript-0.9.1.js";
+	private static final String COMPILER_WRAPPER = "typescript.compile-0.4.js";
+	private static final String ENV_FILE = "env.rhino.js";
 
 	@Getter @Setter
-	private URL envJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/env.rhino.js");
+	private URL envJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + ENV_FILE);
 	@Getter @Setter
-	private URL typescriptJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/typescript-0.8.js");
+	private URL typescriptJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + TYPESCRIPT_COMPILER);
 	@Getter @Setter
-	private URL typescriptCompilerJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/typescript.compile-0.3.js");
+	private URL typescriptCompilerJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + COMPILER_WRAPPER);
 
 	private Scriptable scope;
 
@@ -98,7 +101,7 @@ public class TypescriptCompiler {
 		}
 	}
 
-	
+
 	public String compile(File input, CompilationContext context) throws TypescriptException, IOException {
 		String source = FileUtils.readFileToString(input);
 		return compile(source, context);
@@ -136,9 +139,9 @@ public class TypescriptCompiler {
 
 			scope = cx.initStandardObjects(global);
 
-			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), "env.rhino.js", 1, null);
-			cx.evaluateReader(scope, new InputStreamReader(typescriptJs.openConnection().getInputStream()), "typescript-0.8.js", 1, null);
-			cx.evaluateReader(scope, new InputStreamReader(typescriptCompilerJs.openConnection().getInputStream()), "typescript.compile-0.3.js", 1, null);
+			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), ENV_FILE, 1, null);
+			cx.evaluateReader(scope, new InputStreamReader(typescriptJs.openConnection().getInputStream()), TYPESCRIPT_COMPILER, 1, null);
+			cx.evaluateReader(scope, new InputStreamReader(typescriptCompilerJs.openConnection().getInputStream()), COMPILER_WRAPPER, 1, null);
 		}
 		catch (Exception e) {
 			String message = "Failed to initialize Typescript compiler.";

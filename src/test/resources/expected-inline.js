@@ -1,4 +1,5 @@
 var Greeter = (function () {
-    function Greeter() { }
+    function Greeter() {
+    }
     return Greeter;
 })();

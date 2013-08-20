@@ -1,5 +1,6 @@
 var Greeter = (function () {
-    function Greeter() { }
+    function Greeter() {
+    }
     Object.defineProperty(Greeter.prototype, "greeting", {
         get: function () {
             return this._greeting;
