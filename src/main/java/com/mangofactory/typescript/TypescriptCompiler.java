@@ -1,27 +1,21 @@
 package com.mangofactory.typescript;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.mozilla.javascript.*;
+import org.mozilla.javascript.tools.shell.Global;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.JavaScriptException;
-import org.mozilla.javascript.NativeObject;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.tools.shell.Global;
-
 @Slf4j
 public class TypescriptCompiler {
-	private static final String TYPESCRIPT_COMPILER = "typescript-0.9.1.js";
+	private static final String TYPESCRIPT_COMPILER = "typescript-0.9.1.1.js";
 	private static final String COMPILER_WRAPPER = "typescript.compile-0.4.js";
 	private static final String ENV_FILE = "env.rhino.js";
 
