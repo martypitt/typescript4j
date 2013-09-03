@@ -60,7 +60,6 @@ public class TypescriptCompiler {
 			compilationResult = (NativeObject) scope.get("compilationResult", scope);
 
 			String compiledSource = compilationResult.get("source").toString();
-//			NativeArray problems = (NativeArray) compilationResult.get("problems");
 
 			log.debug("Finished compilation of Typescript source in " + (System.currentTimeMillis() - start) + " ms.");
 
@@ -136,6 +135,17 @@ public class TypescriptCompiler {
 			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), ENV_FILE, 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(typescriptJs.openConnection().getInputStream()), TYPESCRIPT_COMPILER, 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(typescriptCompilerJs.openConnection().getInputStream()), COMPILER_WRAPPER, 1, null);
+		}
+		catch (EvaluatorException e) {
+			StringBuilder message = new StringBuilder();
+			message.append("Failed to initialize Typescript compiler\nerror on line " + e.lineNumber() + ": " +
+					e.details() + "\n" + e.lineSource() + "\n");
+			for (int x = 0; x < e.columnNumber() - 1; x++) {
+				message.append(" ");
+			}
+			message.append("^");
+			log.error(message.toString(), e);
+			throw new IllegalStateException(message.toString(), e);
 		}
 		catch (Exception e) {
 			String message = "Failed to initialize Typescript compiler.";
