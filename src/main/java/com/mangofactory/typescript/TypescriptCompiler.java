@@ -1,33 +1,30 @@
 package com.mangofactory.typescript;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.mozilla.javascript.*;
+import org.mozilla.javascript.tools.shell.Global;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.JavaScriptException;
-import org.mozilla.javascript.NativeObject;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.tools.shell.Global;
-
 @Slf4j
 public class TypescriptCompiler {
+	private static final String TYPESCRIPT_COMPILER = "typescript-0.9.1.1.js";
+	private static final String COMPILER_WRAPPER = "typescript.compile-0.4.js";
+	private static final String ENV_FILE = "env.rhino.js";
 
 	@Getter @Setter
-	private URL envJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/env.rhino.js");
+	private URL envJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + ENV_FILE);
 	@Getter @Setter
-	private URL typescriptJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/typescript-0.8.js");
+	private URL typescriptJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + TYPESCRIPT_COMPILER);
 	@Getter @Setter
-	private URL typescriptCompilerJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/typescript.compile-0.3.js");
+	private URL typescriptCompilerJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + COMPILER_WRAPPER);
 
 	private Scriptable scope;
 
@@ -63,7 +60,6 @@ public class TypescriptCompiler {
 			compilationResult = (NativeObject) scope.get("compilationResult", scope);
 
 			String compiledSource = compilationResult.get("source").toString();
-//			NativeArray problems = (NativeArray) compilationResult.get("problems");
 
 			log.debug("Finished compilation of Typescript source in " + (System.currentTimeMillis() - start) + " ms.");
 
@@ -98,7 +94,7 @@ public class TypescriptCompiler {
 		}
 	}
 
-	
+
 	public String compile(File input, CompilationContext context) throws TypescriptException, IOException {
 		String source = FileUtils.readFileToString(input);
 		return compile(source, context);
@@ -136,9 +132,20 @@ public class TypescriptCompiler {
 
 			scope = cx.initStandardObjects(global);
 
-			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), "env.rhino.js", 1, null);
-			cx.evaluateReader(scope, new InputStreamReader(typescriptJs.openConnection().getInputStream()), "typescript-0.8.js", 1, null);
-			cx.evaluateReader(scope, new InputStreamReader(typescriptCompilerJs.openConnection().getInputStream()), "typescript.compile-0.3.js", 1, null);
+			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), ENV_FILE, 1, null);
+			cx.evaluateReader(scope, new InputStreamReader(typescriptJs.openConnection().getInputStream()), TYPESCRIPT_COMPILER, 1, null);
+			cx.evaluateReader(scope, new InputStreamReader(typescriptCompilerJs.openConnection().getInputStream()), COMPILER_WRAPPER, 1, null);
+		}
+		catch (EvaluatorException e) {
+			StringBuilder message = new StringBuilder();
+			message.append("Failed to initialize Typescript compiler\nerror on line " + e.lineNumber() + ": " +
+					e.details() + "\n" + e.lineSource() + "\n");
+			for (int x = 0; x < e.columnNumber() - 1; x++) {
+				message.append(" ");
+			}
+			message.append("^");
+			log.error(message.toString(), e);
+			throw new IllegalStateException(message.toString(), e);
 		}
 		catch (Exception e) {
 			String message = "Failed to initialize Typescript compiler.";
