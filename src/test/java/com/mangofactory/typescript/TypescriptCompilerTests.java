@@ -102,15 +102,15 @@ public class TypescriptCompilerTests extends AbstractFileManipulationTests {
 		TypescriptCompilationProblem problem = context.getProblem(0);
 		assertThat(problem.getLine(),equalTo(6));
 		assertThat(problem.getColumn(),equalTo(10));
-		assertThat(problem.getMessage(),equalTo("error TS2125: Function 'greet' declared a non-void return type, but has no return expression."));
+		assertThat(problem.getMessage(),equalTo("error TS2131: Function declared a non-void return type, but has no return expression."));
 	}
 
 	@Test
 	public void generatesCorrectEcmaScriptCommand()
 	{
 		compiler.setEcmaScriptVersion(EcmaScriptVersion.ES3);
-		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.LanguageVersion.EcmaScript3, contextName)"));
+		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.LanguageVersion.EcmaScript3, contextName, defaultLibTs)"));
 		compiler.setEcmaScriptVersion(EcmaScriptVersion.ES5);
-		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.LanguageVersion.EcmaScript5, contextName)"));
+		assertThat(compiler.getCompilationCommand(), equalTo("var compilationResult; compilationResult = compilerWrapper.compile(input, TypeScript.LanguageVersion.EcmaScript5, contextName, defaultLibTs)"));
 	}
 }

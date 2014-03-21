@@ -1,22 +1,31 @@
 package com.mangofactory.typescript;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.mozilla.javascript.*;
-import org.mozilla.javascript.tools.shell.Global;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+
+import org.apache.commons.io.FileUtils;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EvaluatorException;
+import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.NativeObject;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.tools.shell.Global;
+
+import com.google.common.io.CharStreams;
+
 @Slf4j
 public class TypescriptCompiler {
-	private static final String TYPESCRIPT_COMPILER = "typescript-0.9.1.1.js";
+	private static final String TYPESCRIPT_COMPILER = "typescript-1.0RC1.js";
 	private static final String COMPILER_WRAPPER = "typescript.compile-0.4.js";
+	private static final String DEFAULT_LIB = "lib.d.ts";
 	private static final String ENV_FILE = "env.rhino.js";
 
 	@Getter @Setter
@@ -25,18 +34,21 @@ public class TypescriptCompiler {
 	private URL typescriptJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + TYPESCRIPT_COMPILER);
 	@Getter @Setter
 	private URL typescriptCompilerJs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + COMPILER_WRAPPER);
+	@Getter @Setter
+	private URL typescriptDefaultLibTs = TypescriptCompiler.class.getClassLoader().getResource("META-INF/" + DEFAULT_LIB);
 
 	private Scriptable scope;
+	private String defaultLibTsString;
 
 	@Getter @Setter
-	private EcmaScriptVersion ecmaScriptVersion = EcmaScriptVersion.ES3;
+	private EcmaScriptVersion ecmaScriptVersion = EcmaScriptVersion.ES5;
 
 	@Getter @Setter
 	private ModuleKind moduleKind = ModuleKind.CommonJS;
 
 	String getCompilationCommand()
 	{
-		return String.format("var compilationResult; compilationResult = compilerWrapper.compile(input, %s, contextName)",ecmaScriptVersion.getJs());
+		return String.format("var compilationResult; compilationResult = compilerWrapper.compile(input, %s, contextName, defaultLibTs)",ecmaScriptVersion.getJs());
 	}
 
 	public String compile(String input, CompilationContext compilationContext)  throws TypescriptException
@@ -51,11 +63,13 @@ public class TypescriptCompiler {
 
 		try {
 			Context cx = Context.enter();
+			cx.setOptimizationLevel(9);
 
 			NativeObject compilationResult = new NativeObject();
 			scope.put("input", scope, input);
 			scope.put("contextName", scope, compilationContext.getName());
 			scope.put("compilationResult", scope, compilationResult);
+			scope.put("defaultLibTs", scope, defaultLibTsString);
 			cx.evaluateString(scope, getCompilationCommand(), "compile.js", 1, null);
 			compilationResult = (NativeObject) scope.get("compilationResult", scope);
 
@@ -135,6 +149,7 @@ public class TypescriptCompiler {
 			cx.evaluateReader(scope, new InputStreamReader(envJs.openConnection().getInputStream()), ENV_FILE, 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(typescriptJs.openConnection().getInputStream()), TYPESCRIPT_COMPILER, 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(typescriptCompilerJs.openConnection().getInputStream()), COMPILER_WRAPPER, 1, null);
+			defaultLibTsString = CharStreams.toString(new InputStreamReader(typescriptDefaultLibTs.openConnection().getInputStream()));
 		}
 		catch (EvaluatorException e) {
 			StringBuilder message = new StringBuilder();
